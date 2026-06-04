@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+html,
+body {
+  background-color: theme("colors.canvas");
+  color: theme("colors.foreground");
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: theme("colors.border");
+}
+
+::selection {
+  background: rgba(109, 94, 248, 0.35);
+}
+
+/* Thin, dark scrollbars to match the SaaS aesthetic */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a313b;
+  border-radius: 8px;
+  border: 2px solid theme("colors.canvas");
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #353d49;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-border bg-surface shadow-card;
+  }
+  .stat-tile {
+    @apply card p-5 transition-colors hover:bg-surface-2;
+  }
+}
