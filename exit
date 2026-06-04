@@ -1,0 +1,119 @@
+[1mdiff --git a/backend/app/main.py b/backend/app/main.py[m
+[1mindex 0d98c0a..97e6254 100644[m
+[1m--- a/backend/app/main.py[m
+[1m+++ b/backend/app/main.py[m
+[36m@@ -6,21 +6,67 @@[m [mcopilot) are mounted in subsequent milestones.[m
+ """[m
+ [m
+ import logging[m
+[32m+[m[32mimport uuid[m
+ from contextlib import asynccontextmanager[m
+ [m
+ from fastapi import FastAPI[m
+ from fastapi.middleware.cors import CORSMiddleware[m
+[32m+[m[32mfrom sqlalchemy import select[m
+ [m
+ from app.core.config import settings[m
+[31m-from app.routers import health[m
+[32m+[m[32mfrom app.db.session import AsyncSessionLocal[m
+[32m+[m[32mfrom app.models.project import Project[m
+[32m+[m[32mfrom app.routers import health, services[m
+ [m
+ logging.basicConfig(level=logging.INFO)[m
+ logger = logging.getLogger("syncops")[m
+ [m
+[32m+[m[32m# MVP: Single hardcoded default project UUID.[m
+[32m+[m[32m# In production, extract project ID from JWT claims per tenant.[m
+[32m+[m[32mDEFAULT_PROJECT_ID = uuid.UUID("550e8400-e29b-41d4-a716-446655440000")[m
+[32m+[m[32mDEFAULT_PROJECT_SLUG = "default"[m
+[32m+[m[32mDEFAULT_PROJECT_NAME = "Default Project"[m
+[32m+[m
+[32m+[m
+[32m+[m[32masync def ensure_default_project() -> None:[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Ensure the default project exists in the database.[m
+[32m+[m
+[32m+[m[32m    Creates the default project if it doesn't exist. This runs on every[m
+[32m+[m[32m    application startup to ensure consistency without requiring manual setup.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    async with AsyncSessionLocal() as session:[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            # Check if project already exists[m
+[32m+[m[32m            stmt = select(Project).where(Project.id == DEFAULT_PROJECT_ID)[m
+[32m+[m[32m            result = await session.execute(stmt)[m
+[32m+[m[32m            project = result.scalar_one_or_none()[m
+[32m+[m
+[32m+[m[32m            if project is None:[m
+[32m+[m[32m                # Create default project[m
+[32m+[m[32m                project = Project([m
+[32m+[m[32m                    id=DEFAULT_PROJECT_ID,[m
+[32m+[m[32m                    name=DEFAULT_PROJECT_NAME,[m
+[32m+[m[32m                    slug=DEFAULT_PROJECT_SLUG,[m
+[32m+[m[32m                )[m
+[32m+[m[32m                session.add(project)[m
+[32m+[m[32m                await session.commit()[m
+[32m+[m[32m                logger.info("Created default project: %s (id=%s)", DEFAULT_PROJECT_NAME, DEFAULT_PROJECT_ID)[m
+[32m+[m[32m            else:[m
+[32m+[m[32m                logger.info("Default project already exists: %s", DEFAULT_PROJECT_NAME)[m
+[32m+[m[32m        except Exception as e:[m
+[32m+[m[32m            await session.rollback()[m
+[32m+[m[32m            logger.error("Failed to ensure default project: %s", str(e))[m
+[32m+[m[32m            raise[m
+[32m+[m
+ [m
+ @asynccontextmanager[m
+ async def lifespan(app: FastAPI):[m
+     logger.info("Starting %s (%s)", settings.app_name, settings.environment)[m
+[32m+[m[41m    [m
+[32m+[m[32m    # Ensure default project exists[m
+[32m+[m[32m    await ensure_default_project()[m
+[32m+[m[41m    [m
+     yield[m
+     logger.info("Shutting down %s", settings.app_name)[m
+ [m
+[36m@@ -42,6 +88,7 @@[m [mdef create_app() -> FastAPI:[m
+     )[m
+ [m
+     app.include_router(health.router)[m
+[32m+[m[32m    app.include_router(services.router)[m
+ [m
+     return app[m
+ [m
+[1mdiff --git a/backend/app/routers/__init__.py b/backend/app/routers/__init__.py[m
+[1mindex e69de29..47172d2 100644[m
+[1m--- a/backend/app/routers/__init__.py[m
+[1m+++ b/backend/app/routers/__init__.py[m
+[36m@@ -0,0 +1,7 @@[m
+[32m+[m[32m"""FastAPI routers for all domain APIs."""[m
+[32m+[m
+[32m+[m[32mfrom app.routers import services[m
+[32m+[m
+[32m+[m[32m__all__ = [[m
+[32m+[m[32m    "services",[m
+[32m+[m[32m][m
+[1mdiff --git a/backend/app/schemas/__init__.py b/backend/app/schemas/__init__.py[m
+[1mindex e69de29..2db4ed4 100644[m
+[1m--- a/backend/app/schemas/__init__.py[m
+[1m+++ b/backend/app/schemas/__init__.py[m
+[36m@@ -0,0 +1,9 @@[m
+[32m+[m[32m"""Pydantic schemas for all domain models."""[m
+[32m+[m
+[32m+[m[32mfrom app.schemas.service import ServiceCreate, ServiceRead, ServiceUpdate[m
+[32m+[m
+[32m+[m[32m__all__ = [[m
+[32m+[m[32m    "ServiceCreate",[m
+[32m+[m[32m    "ServiceRead",[m
+[32m+[m[32m    "ServiceUpdate",[m
+[32m+[m[32m][m
+[1mdiff --git a/backend/app/services/__init__.py b/backend/app/services/__init__.py[m
+[1mindex e69de29..6fed02b 100644[m
+[1m--- a/backend/app/services/__init__.py[m
+[1m+++ b/backend/app/services/__init__.py[m
+[36m@@ -0,0 +1,7 @@[m
+[32m+[m[32m"""Service layer for business logic and database operations."""[m
+[32m+[m
+[32m+[m[32mfrom app.services.service import ServiceRepository[m
+[32m+[m
+[32m+[m[32m__all__ = [[m
+[32m+[m[32m    "ServiceRepository",[m
+[32m+[m[32m][m
