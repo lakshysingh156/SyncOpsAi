@@ -2,7 +2,7 @@
 name = "syncops-ai-backend"
 version = "0.1.0"
 description = "SyncOps AI — AI-native observability platform backend (FastAPI)"
-readme = "README.md"
+
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
