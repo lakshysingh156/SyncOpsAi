@@ -33,6 +33,21 @@ export interface UpdateServiceInput {
   description?: string | null;
 }
 
+export interface Metric {
+  id: string;
+  service_id: string;
+  metric_type: string;
+  value: number;
+  timestamp: string;
+}
+
+export interface MetricSummary {
+  avg_latency: number;
+  avg_error_rate: number;
+  avg_throughput: number;
+  total_services: number;
+}
+
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -121,5 +136,40 @@ export const api = {
       method: "DELETE",
     });
     await handleResponse(response);
+  },
+
+  /**
+   * Get all metrics
+   */
+  async getMetrics(): Promise<Metric[]> {
+    const response = await fetch(`${API_BASE}/metrics`);
+    return handleResponse(response);
+  },
+
+  /**
+   * Get metrics for a specific service
+   */
+  async getServiceMetrics(serviceId: string): Promise<Metric[]> {
+    const response = await fetch(`${API_BASE}/metrics/service/${serviceId}`);
+    return handleResponse(response);
+  },
+
+  /**
+   * Get metrics summary
+   */
+  async getMetricsSummary(): Promise<MetricSummary> {
+    const response = await fetch(`${API_BASE}/metrics/summary`);
+    return handleResponse(response);
+  },
+
+  /**
+   * Generate demo metrics
+   */
+  async generateDemoMetrics(): Promise<{ metrics_generated: number; services_count: number }> {
+    const response = await fetch(`${API_BASE}/metrics/generate-demo-data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    return handleResponse(response);
   },
 };

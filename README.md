@@ -6,13 +6,13 @@
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Frontend | Next.js 14 (App Router, strict TS), Tailwind, dark-first SaaS UI |
-| Backend | FastAPI (Python 3.12), async SQLAlchemy 2.0, Pydantic v2 |
-| Database | PostgreSQL + **pgvector** (Supabase in prod) |
-| AI | Gemini API (analysis + embeddings) |
-| Infra | Docker / docker-compose · Vercel (web) · Render (api) · Supabase (db) |
+| Layer    | Tech                                                                  |
+| -------- | --------------------------------------------------------------------- |
+| Frontend | Next.js 14 (App Router, strict TS), Tailwind, dark-first SaaS UI      |
+| Backend  | FastAPI (Python 3.12), async SQLAlchemy 2.0, Pydantic v2              |
+| Database | PostgreSQL + **pgvector** (Supabase in prod)                          |
+| AI       | Gemini API (analysis + embeddings)                                    |
+| Infra    | Docker / docker-compose · Vercel (web) · Render (api) · Supabase (db) |
 
 ## Architecture (MVP)
 
@@ -48,7 +48,7 @@ make up                       # build + start db, backend, frontend
 
 - Frontend: http://localhost:3000
 - Backend docs: http://localhost:8000/docs
-- Health: http://localhost:8000/health  ·  DB health: http://localhost:8000/health/db
+- Health: http://localhost:8000/health · DB health: http://localhost:8000/health/db
 
 Migrations run automatically on backend start. To run them manually:
 

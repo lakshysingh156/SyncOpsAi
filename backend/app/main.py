@@ -16,7 +16,7 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal
 from app.models.project import Project
-from app.routers import health, services
+from app.routers import health, services, metrics
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("syncops")
@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(services.router)
+    app.include_router(metrics.router)
 
     return app
 

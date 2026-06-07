@@ -1,0 +1,9 @@
+frontend_backup
+backend_backup
+SyncOpsAi.worktrees
+build.log
+
+**/node_modules
+**/.next
+.git
+.gitignore
