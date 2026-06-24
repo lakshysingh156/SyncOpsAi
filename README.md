@@ -39,7 +39,7 @@ syncops-ai/
 └─ Makefile
 ```
 
-## Quick start (Docker)
+## Quick Start (Docker)
 
 ```bash
 cp .env.example .env          # adjust values as needed
