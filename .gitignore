@@ -47,3 +47,8 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Prompt files / AI instructions (internal only)
+attached_assets/
+*.prompt.txt
+*.prompt.md
