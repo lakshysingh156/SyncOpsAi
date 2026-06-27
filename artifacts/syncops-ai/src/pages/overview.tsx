@@ -1,201 +1,172 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Activity, AlertTriangle, BarChart3, Rocket, ScrollText, TrendingUp, Server, Zap, RefreshCw } from "lucide-react";
+import {
+  Server, AlertTriangle, Rocket, TrendingUp, BarChart3,
+  ScrollText, RefreshCw, Zap, ArrowUpRight, CheckCircle,
+} from "lucide-react";
 import { Link } from "wouter";
-import { cn } from "@/lib/utils";
 
 interface DashboardSummary {
-  total_services: number;
-  healthy_services: number;
-  open_incidents: number;
-  critical_incidents: number;
-  recent_deployments: number;
-  failed_deployments: number;
-  avg_error_rate: number;
-  avg_latency: number;
-  total_logs_24h: number;
-  error_logs_24h: number;
+  total_services: number; healthy_services: number;
+  open_incidents: number; critical_incidents: number;
+  recent_deployments: number; failed_deployments: number;
+  avg_error_rate: number; avg_latency: number;
+  total_logs_24h: number; error_logs_24h: number;
 }
 
-function useGenerateDemoData() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const [m, l, d] = await Promise.all([
-        fetch("/api/metrics/generate-demo-data", { method: "POST" }),
-        fetch("/api/logs/generate-demo-data", { method: "POST" }),
-        fetch("/api/deployments/generate-demo-data", { method: "POST" }),
-      ]);
-      return { metrics: await m.json(), logs: await l.json(), deployments: await d.json() };
-    },
-    onSuccess: () => qc.invalidateQueries(),
-  });
+const S = {
+  pageHeader: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 } as React.CSSProperties,
+  h1: { fontSize: 18, fontWeight: 600, color: "#E8ECF4", letterSpacing: "-0.02em" } as React.CSSProperties,
+  sub: { fontSize: 12, color: "#4E5A6B", marginTop: 2 } as React.CSSProperties,
+  grid6: { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, marginBottom: 16 } as React.CSSProperties,
+  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 } as React.CSSProperties,
+};
+
+function StatCard({ label, value, sub, icon: Icon, accent, href }: {
+  label: string; value: string | number; sub: string;
+  icon: React.ElementType; accent: string; href: string;
+}) {
+  return (
+    <Link href={href}>
+      <div className="stat-card" style={{ cursor: "pointer" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+          <span style={{ fontSize: 11, color: "#4E5A6B", fontWeight: 500, letterSpacing: "0.02em" }}>{label}</span>
+          <Icon size={14} style={{ color: accent, flexShrink: 0 }} />
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: "#E8ECF4", letterSpacing: "-0.03em", lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 6 }}>{sub}</div>
+      </div>
+    </Link>
+  );
 }
 
 export default function OverviewPage() {
+  const qc = useQueryClient();
   const { data: summary, isLoading } = useQuery<DashboardSummary>({
     queryKey: ["dashboard-summary"],
     queryFn: () => fetch("/api/dashboard/summary").then(r => r.json()),
     refetchInterval: 30_000,
   });
-
   const { data: incidents = [] } = useQuery<any[]>({
-    queryKey: ["incidents-overview"],
+    queryKey: ["incidents-recent"],
     queryFn: () => fetch("/api/incidents?status=open").then(r => r.json()),
   });
-
   const { data: deployments = [] } = useQuery<any[]>({
-    queryKey: ["deployments-overview"],
+    queryKey: ["deployments-recent"],
     queryFn: () => fetch("/api/deployments").then(r => r.json()),
   });
 
-  const generateDemo = useGenerateDemoData();
+  const genDemo = useMutation({
+    mutationFn: () => Promise.all([
+      fetch("/api/metrics/generate-demo-data", { method: "POST" }),
+      fetch("/api/logs/generate-demo-data", { method: "POST" }),
+      fetch("/api/deployments/generate-demo-data", { method: "POST" }),
+    ]),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+
+  const D = summary;
+  const loading = isLoading;
 
   const stats = [
-    {
-      label: "Services",
-      value: isLoading ? "—" : summary?.total_services ?? 0,
-      sub: `${summary?.healthy_services ?? 0} healthy`,
-      icon: Server,
-      color: "text-info",
-      href: "/services",
-    },
-    {
-      label: "Open Incidents",
-      value: isLoading ? "—" : summary?.open_incidents ?? 0,
-      sub: summary?.critical_incidents ? `${summary.critical_incidents} critical` : "none critical",
-      icon: AlertTriangle,
-      color: (summary?.open_incidents ?? 0) > 0 ? "text-danger" : "text-ok",
-      href: "/incidents",
-    },
-    {
-      label: "Deployments (7d)",
-      value: isLoading ? "—" : summary?.recent_deployments ?? 0,
-      sub: `${summary?.failed_deployments ?? 0} failed`,
-      icon: Rocket,
-      color: "text-accent",
-      href: "/deployments",
-    },
-    {
-      label: "Avg Latency",
-      value: isLoading ? "—" : summary?.avg_latency ? `${summary.avg_latency.toFixed(0)}ms` : "N/A",
-      sub: "last 24h",
-      icon: TrendingUp,
-      color: "text-warn",
-      href: "/metrics",
-    },
-    {
-      label: "Error Rate",
-      value: isLoading ? "—" : summary?.avg_error_rate ? `${summary.avg_error_rate.toFixed(2)}%` : "N/A",
-      sub: "across all services",
-      icon: BarChart3,
-      color: "text-danger",
-      href: "/metrics",
-    },
-    {
-      label: "Log Events (24h)",
-      value: isLoading ? "—" : summary?.total_logs_24h ?? 0,
-      sub: `${summary?.error_logs_24h ?? 0} errors`,
-      icon: ScrollText,
-      color: "text-muted",
-      href: "/logs",
-    },
+    { label: "SERVICES", value: loading ? "—" : D?.total_services ?? 0, sub: `${D?.healthy_services ?? 0} healthy`, icon: Server, accent: "#60A5FA", href: "/services" },
+    { label: "OPEN INCIDENTS", value: loading ? "—" : D?.open_incidents ?? 0, sub: D?.critical_incidents ? `${D.critical_incidents} critical` : "none critical", icon: AlertTriangle, accent: D?.open_incidents ? "#EF4444" : "#10B981", href: "/incidents" },
+    { label: "DEPLOYMENTS (7d)", value: loading ? "—" : D?.recent_deployments ?? 0, sub: `${D?.failed_deployments ?? 0} failed`, icon: Rocket, accent: "#8B5CF6", href: "/deployments" },
+    { label: "AVG LATENCY", value: loading ? "—" : D?.avg_latency ? `${D.avg_latency.toFixed(0)}ms` : "—", sub: "last 24h", icon: TrendingUp, accent: "#F59E0B", href: "/metrics" },
+    { label: "ERROR RATE", value: loading ? "—" : D?.avg_error_rate ? `${D.avg_error_rate.toFixed(2)}%` : "—", sub: "all services", icon: BarChart3, accent: "#EF4444", href: "/metrics" },
+    { label: "LOG EVENTS (24h)", value: loading ? "—" : D?.total_logs_24h ?? 0, sub: `${D?.error_logs_24h ?? 0} errors`, icon: ScrollText, accent: "#4E5A6B", href: "/logs" },
   ];
 
-  const recentDeployments = deployments.slice(0, 5);
-  const openIncidents = incidents.slice(0, 5);
-
-  const statusColor: Record<string, string> = {
-    success: "text-ok",
-    running: "text-info",
-    failed: "text-danger",
-    rolled_back: "text-warn",
-    pending: "text-muted",
+  const DEP_STATUS: Record<string, { color: string; dot: string }> = {
+    success: { color: "#10B981", dot: "#10B981" },
+    failed: { color: "#EF4444", dot: "#EF4444" },
+    running: { color: "#60A5FA", dot: "#3B82F6" },
+    rolled_back: { color: "#F59E0B", dot: "#F59E0B" },
+    pending: { color: "#4E5A6B", dot: "#252D3A" },
   };
 
-  const severityColor: Record<string, string> = {
-    critical: "bg-danger/15 text-danger border-danger/30",
-    high: "bg-warn/15 text-warn border-warn/30",
-    medium: "bg-info/15 text-info border-info/30",
-    low: "bg-muted/10 text-muted border-muted/20",
-  };
-
-  const isEmpty = !isLoading && (summary?.total_services ?? 0) === 0 && (summary?.total_logs_24h ?? 0) === 0;
+  const INC_SEV: Record<string, string> = { critical: "#EF4444", high: "#F97316", medium: "#F59E0B", low: "#8B5CF6" };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div style={{ maxWidth: 1280, margin: "0 auto" }}>
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div style={S.pageHeader}>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
-          <p className="mt-0.5 text-sm text-muted">AI-native observability &amp; operational intelligence.</p>
+          <h1 style={S.h1}>Overview</h1>
+          <p style={S.sub}>AI-native observability & operational intelligence platform</p>
         </div>
-        <div className="flex items-center gap-2">
-          {isEmpty && (
-            <button
-              onClick={() => generateDemo.mutate()}
-              disabled={generateDemo.isPending}
-              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
-            >
-              <Zap className="h-3 w-3" />
-              {generateDemo.isPending ? "Generating…" : "Generate Demo Data"}
-            </button>
-          )}
+        <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => generateDemo.mutate()}
-            disabled={generateDemo.isPending}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-            title="Refresh demo data"
+            className="btn btn-sm btn-outline-blue"
+            onClick={() => genDemo.mutate()}
+            disabled={genDemo.isPending}
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", generateDemo.isPending && "animate-spin")} />
+            <Zap size={12} />
+            {genDemo.isPending ? "Generating…" : "Generate Demo Data"}
+          </button>
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => qc.invalidateQueries()}
+          >
+            <RefreshCw size={12} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
           </button>
         </div>
       </div>
 
-      {/* Stat grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href}>
-            <div className="stat-tile cursor-pointer group">
-              <div className="flex items-start justify-between">
-                <p className="text-[11px] font-medium text-muted group-hover:text-foreground/70 transition-colors">{s.label}</p>
-                <s.icon className={cn("h-3.5 w-3.5", s.color)} />
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight">{s.value}</p>
-              <p className="mt-0.5 text-[11px] text-muted">{s.sub}</p>
-            </div>
-          </Link>
-        ))}
+      {/* Stats strip */}
+      <div style={S.grid6}>
+        {stats.map(s => <StatCard key={s.label} {...s} />)}
       </div>
 
-      {/* Middle row: incidents + deployments */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Incidents + Deployments */}
+      <div style={S.grid2}>
         {/* Open Incidents */}
-        <div className="card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <AlertTriangle className="h-4 w-4 text-danger" />
-              Open Incidents
+        <div className="panel">
+          <div className="panel-header">
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <AlertTriangle size={14} style={{ color: "#EF4444" }} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Open Incidents</span>
+              {incidents.length > 0 && (
+                <span style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 99, padding: "0 6px", fontSize: 10.5, fontWeight: 600 }}>
+                  {incidents.length}
+                </span>
+              )}
             </div>
-            <Link href="/incidents" className="text-xs text-muted hover:text-foreground transition-colors">View all →</Link>
+            <Link href="/incidents">
+              <span style={{ fontSize: 11, color: "#3B82F6", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                View all <ArrowUpRight size={11} />
+              </span>
+            </Link>
           </div>
-          {openIncidents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-              <div className="text-2xl">✓</div>
-              <p className="text-sm font-medium text-ok">All clear</p>
-              <p className="text-xs text-muted">No open incidents</p>
+          {incidents.length === 0 ? (
+            <div style={{ padding: "32px 20px", textAlign: "center" }}>
+              <CheckCircle size={22} style={{ color: "#10B981", margin: "0 auto 8px" }} />
+              <div style={{ fontSize: 12.5, color: "#10B981", fontWeight: 500 }}>All clear</div>
+              <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 3 }}>No open incidents</div>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {openIncidents.map((inc: any) => (
-                <div key={inc.id} className="flex items-start gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors">
-                  <span className={cn("mt-0.5 inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase", severityColor[inc.severity])}>
-                    {inc.severity}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{inc.title}</p>
-                    <p className="mt-0.5 text-xs text-muted">{inc.service_name ?? "Platform"} · {new Date(inc.created_at).toLocaleDateString()}</p>
+            <div>
+              {incidents.slice(0, 6).map((inc: any) => (
+                <div key={inc.id} style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  padding: "10px 16px", borderBottom: "1px solid #111318",
+                  transition: "background 0.1s", cursor: "pointer",
+                }}>
+                  <div style={{ paddingTop: 2 }}>
+                    <span className={`sev sev-${inc.severity}`}>{inc.severity}</span>
                   </div>
-                  <span className="shrink-0 rounded-full bg-warn/10 px-2 py-0.5 text-[10px] font-medium text-warn">{inc.status}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: "#C4CDD9", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{inc.title}</div>
+                    <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 2 }}>
+                      {inc.service_name ?? "Platform"} · {new Date(inc.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 600, color: "#FCD34D",
+                    background: "rgba(245,158,11,0.1)", borderRadius: 99, padding: "2px 7px",
+                    whiteSpace: "nowrap",
+                  }}>{inc.status}</span>
                 </div>
               ))}
             </div>
@@ -203,63 +174,87 @@ export default function OverviewPage() {
         </div>
 
         {/* Recent Deployments */}
-        <div className="card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Rocket className="h-4 w-4 text-accent" />
-              Recent Deployments
+        <div className="panel">
+          <div className="panel-header">
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+              <Rocket size={14} style={{ color: "#8B5CF6" }} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Recent Deployments</span>
             </div>
-            <Link href="/deployments" className="text-xs text-muted hover:text-foreground transition-colors">View all →</Link>
+            <Link href="/deployments">
+              <span style={{ fontSize: 11, color: "#3B82F6", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                View all <ArrowUpRight size={11} />
+              </span>
+            </Link>
           </div>
-          {recentDeployments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-              <p className="text-sm text-muted">No deployments yet</p>
-              <Link href="/deployments" className="text-xs text-accent hover:underline">Create first deployment →</Link>
+          {deployments.length === 0 ? (
+            <div style={{ padding: "32px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#4E5A6B" }}>No deployments yet</div>
+              <Link href="/deployments">
+                <div style={{ fontSize: 11, color: "#3B82F6", marginTop: 6, cursor: "pointer" }}>Create first deployment →</div>
+              </Link>
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {recentDeployments.map((dep: any) => (
-                <div key={dep.id} className="flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium font-mono">{dep.version}</p>
-                      <span className="text-[10px] text-muted bg-surface-2 px-1.5 rounded">{dep.environment}</span>
+            <div>
+              {deployments.slice(0, 6).map((dep: any) => {
+                const ds = DEP_STATUS[dep.status] ?? { color: "#4E5A6B", dot: "#252D3A" };
+                return (
+                  <div key={dep.id} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 16px", borderBottom: "1px solid #111318",
+                  }}>
+                    <span className="dot" style={{ background: ds.dot, boxShadow: `0 0 5px ${ds.dot}80`, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span className="mono" style={{ fontSize: 12, color: "#E8ECF4", fontWeight: 500 }}>{dep.version}</span>
+                        <span className={`env env-${dep.environment}`}>{dep.environment}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 1 }}>
+                        {dep.service_name ?? "—"} · {dep.deployed_by ?? "—"}
+                      </div>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted">{dep.service_name ?? "Unknown"} · {dep.deployed_by ?? "—"}</p>
+                    <span style={{ fontSize: 12, color: ds.color, fontWeight: 600, whiteSpace: "nowrap" }}>{dep.status}</span>
                   </div>
-                  <span className={cn("text-xs font-semibold", statusColor[dep.status] ?? "text-muted")}>{dep.status}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Platform pillars */}
-      <div className="card overflow-hidden">
-        <div className="border-b border-border bg-gradient-to-r from-accent/8 to-transparent px-5 py-4">
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold">Platform Capabilities</h2>
+      {/* Platform grid */}
+      <div className="panel" style={{ overflow: "hidden" }}>
+        <div className="panel-header" style={{ background: "rgba(59,130,246,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3B82F6" }} />
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Platform Capabilities — Phase 1</span>
           </div>
-          <p className="mt-1 text-xs text-muted">SyncOps AI — Phase 1 observability foundation.</p>
+          <span style={{ fontSize: 11, color: "#4E5A6B" }}>SyncOps AI · Observability Foundation</span>
         </div>
-        <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
           {[
-            { title: "Service Catalog", desc: "Health, ownership, tier & metadata for every service.", icon: Server, href: "/services" },
-            { title: "Structured Logs", desc: "Filter by level, service, and full-text search.", icon: ScrollText, href: "/logs" },
-            { title: "Metrics", desc: "Latency, error-rate, and throughput trends with charts.", icon: BarChart3, href: "/metrics" },
-            { title: "Incidents", desc: "Lifecycle management with severity and ownership.", icon: AlertTriangle, href: "/incidents" },
-            { title: "Deployments", desc: "Audit trail with version, environment and status.", icon: Rocket, href: "/deployments" },
-            { title: "AI Copilot", desc: "RAG-powered operational Q&A and RCA (Phase 4).", icon: Zap, href: "/copilot" },
-          ].map((p) => (
+            { title: "Service Catalog", desc: "Health, ownership, tier & metadata per service.", icon: Server, color: "#60A5FA", href: "/services" },
+            { title: "Structured Logs", desc: "Filterable log stream with trace correlation.", icon: ScrollText, color: "#4E5A6B", href: "/logs" },
+            { title: "Metrics", desc: "Latency, error rate & throughput area charts.", icon: BarChart3, color: "#F59E0B", href: "/metrics" },
+            { title: "Incidents", desc: "Severity lifecycle with RCA linkage.", icon: AlertTriangle, color: "#EF4444", href: "/incidents" },
+            { title: "Deployments", desc: "Version audit trail with rollback tracking.", icon: Rocket, color: "#8B5CF6", href: "/deployments" },
+            { title: "AI Copilot", desc: "Operational Q&A — Phase 4 RAG pipeline.", icon: Zap, color: "#3B82F6", href: "/copilot" },
+          ].map((p, i) => (
             <Link key={p.title} href={p.href}>
-              <div className="bg-surface p-4 hover:bg-surface-2 transition-colors cursor-pointer group">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p.icon className="h-3.5 w-3.5 text-accent group-hover:scale-110 transition-transform" />
-                  <div className="text-sm font-medium">{p.title}</div>
+              <div style={{
+                padding: "14px 18px",
+                borderRight: i % 3 !== 2 ? "1px solid #111318" : "none",
+                borderBottom: i < 3 ? "1px solid #111318" : "none",
+                transition: "background 0.12s",
+                cursor: "pointer",
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0F1116"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
+                  <p.icon size={13} style={{ color: p.color }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#C4CDD9" }}>{p.title}</span>
                 </div>
-                <div className="text-xs leading-relaxed text-muted">{p.desc}</div>
+                <p style={{ fontSize: 11.5, color: "#4E5A6B", lineHeight: 1.5 }}>{p.desc}</p>
               </div>
             </Link>
           ))}

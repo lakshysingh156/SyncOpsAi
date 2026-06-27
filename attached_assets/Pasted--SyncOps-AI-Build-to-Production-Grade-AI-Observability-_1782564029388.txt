@@ -1,0 +1,400 @@
+# SyncOps AI — Build to Production-Grade AI Observability Platform
+
+You are the Lead Staff Engineer, Founding Product Engineer, Principal Architect, SRE Lead, and AI Systems Engineer for this project.
+
+Your job is NOT to make cosmetic changes.
+
+Your job is to transform SyncOps AI into a portfolio-grade, internship-winning, production-style AI-native observability platform comparable in architecture and user experience to:
+
+* Datadog
+* New Relic
+* Grafana Cloud
+* Sentry
+* LangSmith
+* Langfuse
+* Honeycomb
+* Elastic Observability
+
+The current project already contains:
+
+* FastAPI backend
+* PostgreSQL
+* Docker
+* Next.js frontend
+* Services
+* Logs
+* Metrics
+* Incidents
+* Deployments
+* AI Copilot
+* Demo datasets
+
+Before writing ANY code:
+
+1. Audit the entire codebase.
+2. Build a complete architecture map.
+3. Identify:
+
+   * Production-ready features
+   * Functional features
+   * Mock/demo features
+   * Placeholder features
+   * Broken features
+4. Generate a detailed gap analysis.
+5. Create a milestone plan.
+6. Execute milestones one-by-one.
+7. Never skip verification.
+8. Never claim something works unless tested.
+
+==================================================
+CORE PRODUCT VISION
+===================
+
+SyncOps AI is NOT a CRUD dashboard.
+
+SyncOps AI is an AI-Native Observability Platform.
+
+The final product should answer:
+
+* Why did my deployment fail?
+* Which service caused the incident?
+* Which logs correlate with the issue?
+* Which metrics degraded?
+* What is the probable root cause?
+* What changed recently?
+* What should I do next?
+
+The platform should feel like a modern DevOps/SRE command center.
+
+==================================================
+PHASE 1 — STABILIZATION
+=======================
+
+Audit every page:
+
+Overview
+Services
+Logs
+Metrics
+Incidents
+Deployments
+AI Copilot
+
+Verify:
+
+* API calls
+* Database queries
+* Error handling
+* Loading states
+* Empty states
+* Filtering
+* CRUD operations
+* Persistence after restart
+
+Fix all bugs.
+
+Do not proceed until stable.
+
+==================================================
+PHASE 2 — REAL DATA MODEL
+=========================
+
+Design production-style schemas.
+
+Services
+
+* id
+* name
+* owner
+* language
+* repository
+* environment
+* tier
+* status
+
+Logs
+
+* id
+* timestamp
+* level
+* service_id
+* trace_id
+* span_id
+* message
+* metadata
+
+Metrics
+
+* id
+* service_id
+* metric_type
+* timestamp
+* value
+
+Incidents
+
+* id
+* title
+* description
+* severity
+* status
+* assigned_to
+* root_cause
+* created_at
+
+Deployments
+
+* id
+* service_id
+* version
+* environment
+* status
+* deployer
+* duration
+* timestamp
+
+Create migrations.
+
+Verify persistence.
+
+==================================================
+PHASE 3 — REAL OBSERVABILITY
+============================
+
+Implement:
+
+Metrics Pipeline
+
+* latency
+* throughput
+* error rate
+* success rate
+* availability
+
+Charts
+
+* zoom
+* filtering
+* time ranges
+* aggregation
+
+Logs
+
+* live stream
+* structured JSON
+* severity filters
+* trace correlation
+
+Incidents
+
+* auto-create from failures
+* incident timelines
+
+Deployments
+
+* deployment history
+* rollback history
+
+==================================================
+PHASE 4 — DISTRIBUTED TRACING
+=============================
+
+Integrate OpenTelemetry.
+
+Create:
+
+Trace
+Span
+Trace Explorer
+
+Support:
+
+* Trace IDs
+* Parent spans
+* Service maps
+* Waterfall visualization
+
+Show:
+
+deployment
+→ latency spike
+→ log errors
+→ incident creation
+
+correlation chain.
+
+==================================================
+PHASE 5 — AI COPILOT
+====================
+
+AI Copilot must become the flagship feature.
+
+Implement:
+
+RAG
+
+Context Sources:
+
+* logs
+* incidents
+* metrics
+* deployments
+* traces
+
+Example questions:
+
+"Why is latency high?"
+
+"What caused incident INC-001?"
+
+"Show logs related to deployment v2.0.1"
+
+"What changed before the outage?"
+
+The AI should:
+
+* retrieve evidence
+* cite sources
+* explain reasoning
+* generate root-cause hypotheses
+
+==================================================
+PHASE 6 — ROOT CAUSE ENGINE
+===========================
+
+Build AI RCA system.
+
+Inputs:
+
+* deployments
+* logs
+* incidents
+* metrics
+* traces
+
+Outputs:
+
+Likely Cause
+Confidence
+Evidence
+Recommended Fixes
+
+Example:
+
+Deployment v2.3.1
+↓
+Auth latency spike
+↓
+JWT failures
+↓
+Incident created
+
+Confidence: 87%
+
+==================================================
+PHASE 7 — SRE EXPERIENCE
+========================
+
+Add:
+
+Service Health Dashboard
+
+Status Page
+
+Alert Center
+
+Alert Rules
+
+SLO Dashboard
+
+Error Budget Dashboard
+
+Reliability Score
+
+Dependency Graph
+
+Service Topology Map
+
+==================================================
+PHASE 8 — ENTERPRISE FEATURES
+=============================
+
+Implement:
+
+Authentication
+
+Organizations
+
+Teams
+
+Roles
+
+API Keys
+
+Audit Logs
+
+RBAC
+
+Environment Separation
+
+Production
+Staging
+Development
+
+==================================================
+PHASE 9 — POLISH
+================
+
+Improve:
+
+Animations
+UX
+Accessibility
+Responsive Design
+
+Benchmark against:
+
+Datadog
+Grafana
+Sentry
+
+Do not stop until the UI feels production-grade.
+
+==================================================
+EXECUTION RULES
+===============
+
+For every task:
+
+1. Explain what will be changed.
+2. Implement.
+3. Test.
+4. Verify.
+5. Show results.
+6. Commit changes.
+
+Never fake functionality.
+
+Never use placeholder implementations when a real implementation is possible.
+
+Never skip testing.
+
+At the end produce:
+
+* Architecture Diagram
+* Database Schema Diagram
+* API Documentation
+* Feature Matrix
+* Resume-worthy Project Summary
+
+Goal:
+
+Transform SyncOps AI from a student CRUD project into a production-style AI-powered observability platform that would impress recruiters for:
+
+Backend Engineering
+Platform Engineering
+Cloud Engineering
+DevOps Engineering
+SRE Engineering
+AI Engineering
+MLOps Engineering

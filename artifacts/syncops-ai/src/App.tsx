@@ -13,26 +13,25 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-    },
+    queries: { retry: 1, staleTime: 30_000 },
   },
 });
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div style={{ display: "flex", minHeight: "100vh", background: "#07090C" }}>
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <Topbar />
-        <main className="flex-1 px-6 py-6 lg:px-8">{children}</main>
+        <main style={{ flex: 1, padding: "20px 24px", overflowY: "auto" }}>
+          {children}
+        </main>
       </div>
     </div>
   );
 }
 
-function Router() {
+function AppRouter() {
   return (
     <Layout>
       <Switch>
@@ -49,14 +48,12 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-        <Router />
+        <AppRouter />
       </WouterRouter>
     </QueryClientProvider>
   );
 }
-
-export default App;

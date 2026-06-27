@@ -5,189 +5,156 @@ import {
   getListMetricsQueryKey, getGetMetricsSummaryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/components/toast";
 import {
-  AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { cn } from "@/lib/utils";
 
-const CHART_TOOLTIP = {
-  contentStyle: { backgroundColor: "#14171C", border: "1px solid #242A33", borderRadius: "8px", fontSize: "12px" },
-  labelStyle: { color: "#E6EAF0" },
-  itemStyle: { color: "#8B95A5" },
+const CHART_CFG = {
+  latency:    { label: "Latency",    unit: "ms",      color: "#60A5FA", gradient: "grad-latency" },
+  error_rate: { label: "Error Rate", unit: "%",       color: "#F87171", gradient: "grad-error" },
+  throughput: { label: "Throughput", unit: "req/min", color: "#34D399", gradient: "grad-throughput" },
+} as const;
+
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background: "#0C0E12", border: "1px solid #1C2029", borderRadius: 5,
+    fontSize: 11.5, boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+  },
+  labelStyle: { color: "#8896AB", marginBottom: 4 },
+  itemStyle: { color: "#E8ECF4" },
 };
 
 export default function MetricsPage() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   const { data: services = [] } = useListServices();
   const { data: metrics = [], isLoading } = useListMetrics();
   const { data: summary } = useGetMetricsSummary();
-  const generateMutation = useGenerateDemoMetrics();
-  const { success, error: errorToast } = useToast();
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const genMutation = useGenerateDemoMetrics();
+  const [selectedSvc, setSelectedSvc] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: getListMetricsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetMetricsSummaryQueryKey() });
+    qc.invalidateQueries({ queryKey: getListMetricsQueryKey() });
+    qc.invalidateQueries({ queryKey: getGetMetricsSummaryQueryKey() });
   };
 
   const handleGenerate = async () => {
-    setIsGenerating(true);
-    try {
-      await generateMutation.mutateAsync();
-      await invalidate();
-      success("Demo metrics generated");
-    } catch {
-      errorToast("Failed to generate metrics");
-    } finally {
-      setIsGenerating(false);
-    }
+    setGenerating(true);
+    try { await genMutation.mutateAsync(); invalidate(); }
+    finally { setGenerating(false); }
   };
 
-  const filteredMetrics = useMemo(() => {
-    if (!selectedServiceId) return metrics;
-    return metrics.filter(m => m.service_id === selectedServiceId);
-  }, [metrics, selectedServiceId]);
+  const filtered = useMemo(() =>
+    selectedSvc ? metrics.filter(m => m.service_id === selectedSvc) : metrics,
+    [metrics, selectedSvc]);
 
   const chartData = useMemo(() => {
     const grouped: Record<string, Record<string, number>> = {};
-    filteredMetrics.forEach((metric) => {
-      const key = new Date(metric.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit" });
+    filtered.forEach(m => {
+      const key = new Date(m.timestamp).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit" });
       if (!grouped[key]) grouped[key] = {};
-      grouped[key][metric.metric_type] = metric.value;
+      grouped[key][m.metric_type] = m.value;
     });
     return Object.entries(grouped)
-      .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
       .map(([date, data]) => ({ date, ...data }));
-  }, [filteredMetrics]);
-
-  const CHARTS = [
-    {
-      key: "latency",
-      label: "Latency",
-      unit: "ms",
-      color: "#60A5FA",
-      gradientId: "gradLatency",
-    },
-    {
-      key: "error_rate",
-      label: "Error Rate",
-      unit: "%",
-      color: "#F87171",
-      gradientId: "gradError",
-    },
-    {
-      key: "throughput",
-      label: "Throughput",
-      unit: "req/min",
-      color: "#34D399",
-      gradientId: "gradThru",
-    },
-  ] as const;
+  }, [filtered]);
 
   const statCards = [
-    { label: "Avg Latency", value: summary ? `${summary.avg_latency.toFixed(0)}ms` : "—", color: "text-info" },
-    { label: "Avg Error Rate", value: summary ? `${summary.avg_error_rate.toFixed(2)}%` : "—", color: "text-danger" },
-    { label: "Avg Throughput", value: summary ? `${summary.avg_throughput.toFixed(0)}` : "—", unit: "req/min", color: "text-ok" },
-    { label: "Services", value: summary ? String(summary.total_services) : "—", color: "text-accent" },
+    { label: "AVG LATENCY",    value: summary ? `${summary.avg_latency.toFixed(0)}ms` : "—", color: "#60A5FA" },
+    { label: "AVG ERROR RATE", value: summary ? `${summary.avg_error_rate.toFixed(2)}%` : "—", color: "#F87171" },
+    { label: "AVG THROUGHPUT", value: summary ? `${summary.avg_throughput.toFixed(0)}` : "—", unit: "req/min", color: "#34D399" },
+    { label: "SERVICES",       value: summary ? `${summary.total_services}` : "—", color: "#8B5CF6" },
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
-      <div className="flex items-center justify-between">
+    <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Metrics</h1>
-          <p className="mt-0.5 text-sm text-muted">Performance trends — {metrics.length} data points</p>
+          <h1 style={{ fontSize: 18, fontWeight: 600, color: "#E8ECF4", letterSpacing: "-0.02em" }}>Metrics</h1>
+          <p style={{ fontSize: 12, color: "#4E5A6B", marginTop: 2 }}>
+            Performance telemetry — <span className="mono" style={{ color: "#8896AB" }}>{metrics.length}</span> data points
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
-          >
-            <Zap className="h-3 w-3" />
-            {isGenerating ? "Generating…" : "Generate Data"}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn btn-sm btn-outline-blue" onClick={handleGenerate} disabled={generating}>
+            <Zap size={12} />{generating ? "Generating…" : "Generate Data"}
           </button>
-          <button
-            onClick={invalidate}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted hover:bg-surface-2 transition-colors"
-          >
-            <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+          <button className="btn btn-sm btn-ghost" onClick={invalidate}>
+            <RefreshCw size={12} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
           </button>
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {statCards.map((s) => (
-          <div key={s.label} className="stat-tile">
-            <p className="text-[11px] text-muted">{s.label}</p>
-            <p className={cn("mt-1.5 text-2xl font-bold", s.color)}>
+      {/* Stat strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
+        {statCards.map(s => (
+          <div key={s.label} className="stat-card">
+            <div style={{ fontSize: 10, color: "#4E5A6B", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 8 }}>{s.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: s.color, letterSpacing: "-0.03em" }}>
               {s.value}
-              {s.unit && <span className="ml-1 text-xs font-normal text-muted">{s.unit}</span>}
-            </p>
+              {s.unit && <span style={{ fontSize: 12, fontWeight: 400, color: "#4E5A6B", marginLeft: 4 }}>{s.unit}</span>}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Service filter */}
-      <div className="flex items-center gap-2">
-        <label className="text-xs text-muted">Filter by service:</label>
+      {/* Filter row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <label style={{ fontSize: 11.5, color: "#4E5A6B" }}>Service:</label>
         <select
-          value={selectedServiceId || ""}
-          onChange={e => setSelectedServiceId(e.target.value || null)}
-          className="h-7 rounded border border-border bg-surface px-2 text-xs text-foreground focus:outline-none"
+          value={selectedSvc || ""}
+          onChange={e => setSelectedSvc(e.target.value || null)}
+          className="field field-sm"
+          style={{ width: 180 }}
         >
           <option value="">All services</option>
-          {(services as any[]).map((svc) => (
-            <option key={svc.id} value={svc.id}>{svc.name}</option>
-          ))}
+          {(services as any[]).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
-        <span className="text-xs text-muted">({filteredMetrics.length} points)</span>
+        <span style={{ fontSize: 11, color: "#4E5A6B" }}>({filtered.length} points)</span>
       </div>
 
       {/* Charts */}
-      <div className="space-y-4">
-        {CHARTS.map(({ key, label, unit, color, gradientId }) => (
-          <div key={key} className="card p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" style={{ color }} />
-                <h2 className="text-sm font-semibold">{label}</h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {(Object.entries(CHART_CFG) as [string, typeof CHART_CFG[keyof typeof CHART_CFG]][]).map(([key, cfg]) => (
+          <div key={key} className="panel" style={{ padding: "16px 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.color, boxShadow: `0 0 8px ${cfg.color}80` }} />
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#E8ECF4" }}>{cfg.label}</span>
               </div>
-              <span className="text-xs text-muted">{unit}</span>
+              <span style={{ fontSize: 11, color: "#4E5A6B" }}>{cfg.unit}</span>
             </div>
+
             {isLoading ? (
-              <div className="h-52 animate-pulse rounded bg-surface-2" />
+              <div style={{ height: 180, background: "#0F1116", borderRadius: 4, animation: "pulse 1.5s ease-in-out infinite" }} />
             ) : chartData.length === 0 ? (
-              <div className="flex h-52 items-center justify-center">
-                <div className="text-center">
-                  <p className="text-sm text-muted">No data yet.</p>
-                  <button onClick={handleGenerate} className="mt-2 text-xs text-accent hover:underline">Generate demo metrics →</button>
-                </div>
+              <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 8 }}>
+                <TrendingUp size={22} style={{ color: "#2E3848" }} />
+                <div style={{ fontSize: 12, color: "#4E5A6B" }}>No data yet</div>
+                <button className="btn btn-sm btn-outline-blue" onClick={handleGenerate}>
+                  <Zap size={11} />Generate demo metrics
+                </button>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                   <defs>
-                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={color} stopOpacity={0.15} />
-                      <stop offset="95%" stopColor={color} stopOpacity={0} />
+                    <linearGradient id={cfg.gradient} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={cfg.color} stopOpacity={0.18} />
+                      <stop offset="95%" stopColor={cfg.color} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#242A33" />
-                  <XAxis dataKey="date" stroke="#8B95A5" tick={{ fontSize: 10 }} />
-                  <YAxis stroke="#8B95A5" tick={{ fontSize: 10 }} />
-                  <Tooltip {...CHART_TOOLTIP} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#111318" vertical={false} />
+                  <XAxis dataKey="date" stroke="#2E3848" tick={{ fontSize: 10, fill: "#4E5A6B" }} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#2E3848" tick={{ fontSize: 10, fill: "#4E5A6B" }} tickLine={false} axisLine={false} />
+                  <Tooltip {...TOOLTIP_STYLE} />
                   <Area
-                    type="monotone"
-                    dataKey={key}
-                    stroke={color}
-                    fill={`url(#${gradientId})`}
-                    strokeWidth={1.5}
-                    dot={false}
-                    name={`${label} (${unit})`}
+                    type="monotone" dataKey={key}
+                    stroke={cfg.color} strokeWidth={1.5}
+                    fill={`url(#${cfg.gradient})`}
+                    dot={false} activeDot={{ r: 4, fill: cfg.color, strokeWidth: 0 }}
+                    name={`${cfg.label} (${cfg.unit})`}
                   />
                 </AreaChart>
               </ResponsiveContainer>
