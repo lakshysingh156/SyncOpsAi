@@ -1,9 +1,8 @@
 <div align="center">
 
-<h1>⚡ SyncOps AI</h1>
+<img src="https://raw.githubusercontent.com/lakshysingh156/SyncOpsAi/main/docs/screenshots/banner.png" alt="SyncOps AI" width="100%" />
 
-<p><strong>AI-native observability & operational intelligence platform for engineering teams.</strong><br/>
-Monitor services, investigate incidents, analyze logs, and resolve issues — faster.</p>
+<br/><br/>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -103,25 +102,19 @@ graph TD
 > **To make this repo look most impressive, take screenshots in this exact order and state:**
 
 ### 1. Overview Dashboard
-**Page:** `/` (Overview)
-**State:** All stat tiles showing data — 8 services, 2+ open incidents, 5+ deployments. Recent incidents panel showing P1 severity in red. Recent deployments showing version tags.
+**Page:** `/` — seed demo data first, then capture all stat tiles + recent incidents (P1 in red) + recent deployments.
 
-<!-- Add screenshot here -->
-![Dashboard Overview](docs/screenshots/dashboard.png)
+![Dashboard Overview](https://placehold.co/1280x720/07090C/3B82F6?text=Dashboard+Screenshot+Coming+Soon)
 
 ### 2. Metrics & Analytics
-**Page:** `/metrics`
-**State:** All three charts rendered (Latency, Error Rate, Throughput) with 30+ data points each. Service filter dropdown visible. Area charts showing realistic curve patterns.
+**Page:** `/metrics` — capture all 3 area charts (Latency, Error Rate, Throughput) fully rendered with service filter visible.
 
-<!-- Add screenshot here -->
-![Metrics Analytics](docs/screenshots/metrics.png)
+![Metrics Analytics](https://placehold.co/1280x720/07090C/3B82F6?text=Metrics+Screenshot+Coming+Soon)
 
 ### 3. AI Copilot
-**Page:** `/copilot`
-**State:** A conversation visible — ask *"Why is auth-service showing elevated error rates?"* — show the AI response with formatted analysis. Suggested prompts visible in the sidebar.
+**Page:** `/copilot` — show a live conversation: *"Summarize open incidents and identify the highest risk service"* with the AI response visible.
 
-<!-- Add screenshot here -->
-![AI Copilot](docs/screenshots/copilot.png)
+![AI Copilot](https://placehold.co/1280x720/07090C/3B82F6?text=AI+Copilot+Screenshot+Coming+Soon)
 
 ---
 
