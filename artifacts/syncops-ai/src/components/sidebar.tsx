@@ -1,8 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Server, ScrollText, BarChart3,
-  AlertTriangle, Rocket, Bot, ChevronRight,
-  Zap, Circle,
+  AlertTriangle, Rocket, Cpu, Sparkles, GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +13,8 @@ const NAV = [
   { href: "/metrics",     label: "Metrics",     icon: BarChart3 },
   { href: "/incidents",   label: "Incidents",   icon: AlertTriangle, alertKey: true },
   { href: "/deployments", label: "Deployments", icon: Rocket },
-  { href: "/copilot",     label: "AI Copilot",  icon: Bot, badge: "AI" },
+  { href: "/tracing",     label: "Tracing",     icon: GitBranch },
+  { href: "/insights",    label: "AI Insights", icon: Sparkles, badge: "AI" },
 ] as const;
 
 export function Sidebar() {
@@ -27,71 +27,70 @@ export function Sidebar() {
   });
 
   const openIncidents: number = summary?.open_incidents ?? 0;
-  const criticalIncidents: number = summary?.critical_incidents ?? 0;
+  const healthy = summary?.healthy_services ?? 0;
+  const total   = summary?.total_services   ?? 0;
 
   return (
     <aside
-      className="hidden md:flex flex-col"
       style={{
-        width: 220,
-        minWidth: 220,
-        background: "#070A0E",
-        borderRight: "1px solid #141820",
+        width: 208,
+        minWidth: 208,
+        background: "#06080B",
+        borderRight: "1px solid #181D26",
         height: "100vh",
         position: "sticky",
         top: 0,
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* Logo */}
-      <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #141820" }}>
-        <div className="flex items-center gap-2.5">
+      {/* Workspace / logo */}
+      <div style={{ padding: "14px 12px 10px", borderBottom: "1px solid #181D26" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <div style={{
-            width: 30, height: 30,
-            background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+            width: 28, height: 28,
+            background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
             borderRadius: 7,
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 16px rgba(37,99,235,0.35)",
+            flexShrink: 0,
+            boxShadow: "0 0 12px rgba(37,99,235,0.3)",
           }}>
-            <Zap size={15} color="#fff" />
+            <Cpu size={14} color="#fff" />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#E8ECF4", letterSpacing: "-0.01em" }}>SyncOps AI</div>
-            <div style={{ fontSize: 10, color: "#3B82F6", fontWeight: 500, letterSpacing: "0.04em" }}>OBSERVABILITY</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#EAECF0", letterSpacing: "-0.015em", lineHeight: 1.2 }}>SyncOps AI</div>
+            <div style={{ fontSize: 10.5, color: "#404C5C", marginTop: 1 }}>Observability Platform</div>
           </div>
-        </div>
-      </div>
-
-      {/* System status */}
-      <div style={{ padding: "10px 14px", borderBottom: "1px solid #141820" }}>
-        <div className="flex items-center gap-2">
-          <span className="dot dot-green dot-pulse" />
-          <span style={{ fontSize: 11, color: "#8896AB" }}>All systems operational</span>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "10px 8px", overflow: "hidden" }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: "#2E3848", letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 12px 8px" }}>
-          Platform
-        </div>
+      <nav style={{ flex: 1, padding: "8px 6px", overflowY: "auto" }}>
+        <div className="nav-section-label">Platform</div>
         {NAV.map(({ href, label, icon: Icon, alertKey, badge }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           const showAlert = alertKey && openIncidents > 0;
           return (
             <Link key={href} href={href}>
               <div className={cn("nav-item", active && "active")} style={{ marginBottom: 1 }}>
-                <Icon size={15} style={{ flexShrink: 0 }} />
-                <span style={{ flex: 1, fontWeight: active ? 500 : 400 }}>{label}</span>
+                <Icon
+                  size={14}
+                  style={{
+                    flexShrink: 0,
+                    color: active ? "#60A5FA" : showAlert ? "#F87171" : "inherit",
+                  }}
+                />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: active ? 500 : 400 }}>{label}</span>
                 {showAlert && (
                   <span className="badge-critical">{openIncidents > 9 ? "9+" : openIncidents}</span>
                 )}
                 {badge && !showAlert && (
                   <span style={{
-                    fontSize: 9, fontWeight: 700, letterSpacing: "0.05em",
-                    background: "rgba(59,130,246,0.15)", color: "#60A5FA",
-                    border: "1px solid rgba(59,130,246,0.25)",
-                    borderRadius: 3, padding: "1px 4px",
+                    fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+                    background: "rgba(139,92,246,0.12)", color: "#A78BFA",
+                    border: "1px solid rgba(139,92,246,0.2)",
+                    borderRadius: 3, padding: "1px 5px",
                   }}>{badge}</span>
                 )}
               </div>
@@ -101,30 +100,40 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: "10px 14px", borderTop: "1px solid #141820" }}>
-        {criticalIncidents > 0 && (
+      <div style={{ padding: "10px 12px", borderTop: "1px solid #181D26" }}>
+        {/* System health line */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <span
+            className="dot"
+            style={{
+              background: openIncidents > 0 ? "#EF4444" : "#10B981",
+              boxShadow: openIncidents > 0
+                ? "0 0 6px rgba(239,68,68,0.4)"
+                : "0 0 6px rgba(16,185,129,0.4)",
+              animation: "dot-pulse 2.4s ease-in-out infinite",
+            }}
+          />
+          <span style={{ fontSize: 11, color: "#404C5C" }}>
+            {openIncidents > 0
+              ? `${openIncidents} incident${openIncidents > 1 ? "s" : ""} open`
+              : total > 0
+                ? `${healthy}/${total} services healthy`
+                : "Awaiting data"}
+          </span>
+        </div>
+
+        {/* User */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
-            background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)",
-            borderRadius: 5, padding: "7px 10px", marginBottom: 10,
-          }}>
-            <div className="flex items-center gap-1.5">
-              <AlertTriangle size={11} color="#F87171" />
-              <span style={{ fontSize: 11, color: "#F87171", fontWeight: 500 }}>
-                {criticalIncidents} critical incident{criticalIncidents > 1 ? "s" : ""}
-              </span>
-            </div>
-          </div>
-        )}
-        <div className="flex items-center gap-2.5">
-          <div style={{
-            width: 26, height: 26, borderRadius: "50%",
+            width: 24, height: 24, borderRadius: "50%",
             background: "linear-gradient(135deg, #1D4ED8, #7C3AED)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700, color: "#fff",
+            fontSize: 10, fontWeight: 700, color: "#fff",
+            flexShrink: 0,
           }}>L</div>
-          <div>
-            <div style={{ fontSize: 12, color: "#C4CDD9", fontWeight: 500 }}>lakshay.singh</div>
-            <div style={{ fontSize: 10, color: "#4E5A6B" }}>Admin · v0.1.0</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: "#C1CAD6", fontWeight: 500, letterSpacing: "-0.01em" }}>lakshay.singh</div>
+            <div style={{ fontSize: 10, color: "#404C5C" }}>Admin · v0.1.0</div>
           </div>
         </div>
       </div>

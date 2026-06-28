@@ -8,7 +8,8 @@ import MetricsPage from "@/pages/metrics";
 import LogsPage from "@/pages/logs";
 import IncidentsPage from "@/pages/incidents";
 import DeploymentsPage from "@/pages/deployments";
-import CopilotPage from "@/pages/copilot";
+import TracingPage from "@/pages/tracing";
+import InsightsPage from "@/pages/insights";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -19,7 +20,7 @@ const queryClient = new QueryClient({
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#07090C" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#06080B" }}>
       <Sidebar />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <Topbar />
@@ -37,11 +38,12 @@ function AppRouter() {
       <Switch>
         <Route path="/" component={OverviewPage} />
         <Route path="/services" component={ServicesPage} />
-        <Route path="/metrics" component={MetricsPage} />
         <Route path="/logs" component={LogsPage} />
+        <Route path="/metrics" component={MetricsPage} />
         <Route path="/incidents" component={IncidentsPage} />
         <Route path="/deployments" component={DeploymentsPage} />
-        <Route path="/copilot" component={CopilotPage} />
+        <Route path="/tracing" component={TracingPage} />
+        <Route path="/insights" component={InsightsPage} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

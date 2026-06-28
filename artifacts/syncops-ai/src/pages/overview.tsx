@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Server, AlertTriangle, Rocket, TrendingUp, BarChart3,
   ScrollText, RefreshCw, Zap, ArrowUpRight, CheckCircle,
+  Sparkles, Activity, Clock,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -13,32 +14,47 @@ interface DashboardSummary {
   total_logs_24h: number; error_logs_24h: number;
 }
 
-const S = {
-  pageHeader: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 } as React.CSSProperties,
-  h1: { fontSize: 18, fontWeight: 600, color: "#E8ECF4", letterSpacing: "-0.02em" } as React.CSSProperties,
-  sub: { fontSize: 12, color: "#4E5A6B", marginTop: 2 } as React.CSSProperties,
-  grid6: { display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, marginBottom: 16 } as React.CSSProperties,
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 } as React.CSSProperties,
+function timeSince(ts: string) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+const INC_COLOR: Record<string, string> = {
+  critical: "#F87171", high: "#FB923C", medium: "#FCD34D", low: "#A5B4FC"
 };
 
-function StatCard({ label, value, sub, icon: Icon, accent, href }: {
-  label: string; value: string | number; sub: string;
-  icon: React.ElementType; accent: string; href: string;
-}) {
-  return (
-    <Link href={href}>
-      <div className="stat-card" style={{ cursor: "pointer" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-          <span style={{ fontSize: 11, color: "#4E5A6B", fontWeight: 500, letterSpacing: "0.02em" }}>{label}</span>
-          <Icon size={14} style={{ color: accent, flexShrink: 0 }} />
-        </div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: "#E8ECF4", letterSpacing: "-0.03em", lineHeight: 1 }}>
-          {value}
-        </div>
-        <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 6 }}>{sub}</div>
-      </div>
-    </Link>
-  );
+const DEP_DOT: Record<string, string> = {
+  success: "#10B981", failed: "#EF4444", running: "#3B82F6",
+  rolled_back: "#F59E0B", pending: "#404C5C",
+};
+
+function getAiSummary(D: DashboardSummary | undefined, incidents: any[], deployments: any[]) {
+  if (!D) return "Awaiting telemetry data — generate demo data to see AI operational analysis.";
+
+  const critical = incidents.filter(i => i.severity === "critical");
+  const high     = incidents.filter(i => i.severity === "high");
+  const failed   = deployments.filter(d => d.status === "failed" || d.status === "rolled_back");
+
+  if (critical.length > 0) {
+    const top = critical[0];
+    const dep = failed[0];
+    return `P0 active: "${top.title}". ${D.avg_latency > 200 ? `Average P99 latency is elevated at ${D.avg_latency.toFixed(0)}ms across all services. ` : ""}${dep ? `Deployment ${dep.version} on ${dep.service_name} ${dep.status === "failed" ? "failed" : "was rolled back"} — correlated with current incident spike. ` : ""}${high.length > 0 ? `${high.length} additional high-severity incident${high.length > 1 ? "s" : ""} require attention. ` : ""}Recommend immediate incident triage before next deployment window.`;
+  }
+
+  if (D.open_incidents > 0) {
+    return `${D.open_incidents} open incident${D.open_incidents > 1 ? "s" : ""} across the platform. Error rate at ${D.avg_error_rate?.toFixed(2) ?? "—"}% — ${D.avg_error_rate > 2 ? "above threshold, investigation recommended" : "within acceptable range"}. ${D.avg_latency ? `P99 latency at ${D.avg_latency.toFixed(0)}ms.` : ""} ${failed.length > 0 ? `${failed.length} recent deployment${failed.length > 1 ? "s" : ""} failed or rolled back.` : "All recent deployments succeeded."}`;
+  }
+
+  if (D.total_services === 0) {
+    return "No services registered. Add services to the catalog and generate demo data to enable AI operational analysis.";
+  }
+
+  return `All ${D.total_services} services operational. ${D.healthy_services} reporting healthy. Error rate ${D.avg_error_rate?.toFixed(2) ?? "0.00"}% · P99 latency ${D.avg_latency?.toFixed(0) ?? "—"}ms — both within normal bounds. ${D.recent_deployments} deployments in the last 7 days with ${D.failed_deployments === 0 ? "100% success rate" : `${D.failed_deployments} failure${D.failed_deployments > 1 ? "s" : ""}`}.`;
 }
 
 export default function OverviewPage() {
@@ -67,109 +83,189 @@ export default function OverviewPage() {
   });
 
   const D = summary;
-  const loading = isLoading;
-
-  const stats = [
-    { label: "SERVICES", value: loading ? "—" : D?.total_services ?? 0, sub: `${D?.healthy_services ?? 0} healthy`, icon: Server, accent: "#60A5FA", href: "/services" },
-    { label: "OPEN INCIDENTS", value: loading ? "—" : D?.open_incidents ?? 0, sub: D?.critical_incidents ? `${D.critical_incidents} critical` : "none critical", icon: AlertTriangle, accent: D?.open_incidents ? "#EF4444" : "#10B981", href: "/incidents" },
-    { label: "DEPLOYMENTS (7d)", value: loading ? "—" : D?.recent_deployments ?? 0, sub: `${D?.failed_deployments ?? 0} failed`, icon: Rocket, accent: "#8B5CF6", href: "/deployments" },
-    { label: "AVG LATENCY", value: loading ? "—" : D?.avg_latency ? `${D.avg_latency.toFixed(0)}ms` : "—", sub: "last 24h", icon: TrendingUp, accent: "#F59E0B", href: "/metrics" },
-    { label: "ERROR RATE", value: loading ? "—" : D?.avg_error_rate ? `${D.avg_error_rate.toFixed(2)}%` : "—", sub: "all services", icon: BarChart3, accent: "#EF4444", href: "/metrics" },
-    { label: "LOG EVENTS (24h)", value: loading ? "—" : D?.total_logs_24h ?? 0, sub: `${D?.error_logs_24h ?? 0} errors`, icon: ScrollText, accent: "#4E5A6B", href: "/logs" },
-  ];
-
-  const DEP_STATUS: Record<string, { color: string; dot: string }> = {
-    success: { color: "#10B981", dot: "#10B981" },
-    failed: { color: "#EF4444", dot: "#EF4444" },
-    running: { color: "#60A5FA", dot: "#3B82F6" },
-    rolled_back: { color: "#F59E0B", dot: "#F59E0B" },
-    pending: { color: "#4E5A6B", dot: "#252D3A" },
-  };
-
-  const INC_SEV: Record<string, string> = { critical: "#EF4444", high: "#F97316", medium: "#F59E0B", low: "#8B5CF6" };
+  const aiSummary = getAiSummary(D, incidents, deployments);
+  const hasData = (D?.total_services ?? 0) > 0;
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={S.pageHeader}>
+    <div style={{ maxWidth: 1260, margin: "0 auto" }} className="fade-in">
+
+      {/* Page header */}
+      <div className="page-header">
         <div>
-          <h1 style={S.h1}>Overview</h1>
-          <p style={S.sub}>AI-native observability & operational intelligence platform</p>
+          <h1 className="page-title">Overview</h1>
+          <p className="page-sub">Operational intelligence across all services</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
           <button
             className="btn btn-sm btn-outline-blue"
             onClick={() => genDemo.mutate()}
             disabled={genDemo.isPending}
           >
-            <Zap size={12} />
+            <Zap size={11} />
             {genDemo.isPending ? "Generating…" : "Generate Demo Data"}
           </button>
           <button
             className="btn btn-sm btn-ghost"
             onClick={() => qc.invalidateQueries()}
+            title="Refresh"
           >
-            <RefreshCw size={12} style={{ animation: isLoading ? "spin 1s linear infinite" : "none" }} />
+            <RefreshCw
+              size={13}
+              style={{
+                color: "#7A8899",
+                animation: isLoading ? "spin 1s linear infinite" : "none",
+              }}
+            />
           </button>
         </div>
       </div>
 
-      {/* Stats strip */}
-      <div style={S.grid6}>
-        {stats.map(s => <StatCard key={s.label} {...s} />)}
+      {/* Metric strip — unified horizontal surface */}
+      <div className="metric-strip">
+          {[
+            {
+              label: "Services",
+              value: isLoading ? "—" : D?.total_services ?? 0,
+              sub: D ? `${D.healthy_services} healthy · ${(D.total_services - D.healthy_services)} degraded` : "no data",
+              icon: Server,
+              href: "/services",
+              accent: "#60A5FA",
+            },
+            {
+              label: "Open Incidents",
+              value: isLoading ? "—" : D?.open_incidents ?? 0,
+              sub: D?.critical_incidents ? `${D.critical_incidents} critical` : "none critical",
+              icon: AlertTriangle,
+              href: "/incidents",
+              accent: D?.open_incidents ? "#F87171" : "#34D399",
+            },
+            {
+              label: "Deployments (7d)",
+              value: isLoading ? "—" : D?.recent_deployments ?? 0,
+              sub: D?.failed_deployments ? `${D.failed_deployments} failed` : "all succeeded",
+              icon: Rocket,
+              href: "/deployments",
+              accent: "#A78BFA",
+            },
+            {
+              label: "Avg P99 Latency",
+              value: isLoading ? "—" : D?.avg_latency ? `${D.avg_latency.toFixed(0)}ms` : "—",
+              sub: "last 24 hours",
+              icon: Activity,
+              href: "/metrics",
+              accent: D?.avg_latency && D.avg_latency > 200 ? "#FBBF24" : "#34D399",
+            },
+            {
+              label: "Error Rate",
+              value: isLoading ? "—" : D?.avg_error_rate ? `${D.avg_error_rate.toFixed(2)}%` : "—",
+              sub: "all services",
+              icon: BarChart3,
+              href: "/metrics",
+              accent: D?.avg_error_rate && D.avg_error_rate > 2 ? "#F87171" : "#34D399",
+            },
+            {
+              label: "Log Events (24h)",
+              value: isLoading ? "—" : D?.total_logs_24h ?? 0,
+              sub: D?.error_logs_24h ? `${D.error_logs_24h} errors` : "no errors",
+              icon: ScrollText,
+              href: "/logs",
+              accent: "#7A8899",
+            },
+          ].map(({ label, value, sub, icon: Icon, href, accent }) => (
+            <Link key={label} href={href}>
+              <div className="metric-item">
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                  <span className="metric-label" style={{ marginBottom: 0 }}>{label}</span>
+                  <Icon size={11} style={{ color: accent, marginLeft: "auto" }} />
+                </div>
+                <span className="metric-value" style={{ color: value === "—" ? "#404C5C" : "#EAECF0" }}>
+                  {value}
+                </span>
+                <span className="metric-sub">{sub}</span>
+              </div>
+            </Link>
+          ))}
+      </div>
+
+      {/* AI Analysis block */}
+      <div className="ai-block">
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+          <Sparkles size={13} style={{ color: "#60A5FA" }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: "#60A5FA", letterSpacing: "0.03em" }}>AI Analysis</span>
+          <span style={{
+            fontSize: 9.5, color: "#404C5C", fontWeight: 500,
+            background: "#0F1215", border: "1px solid #181D26",
+            borderRadius: 3, padding: "1px 6px", marginLeft: "auto",
+          }}>
+            GPT-4o · demo mode
+          </span>
+        </div>
+        <p style={{ fontSize: 13, color: "#C1CAD6", lineHeight: 1.65, maxWidth: 900 }}>
+          {aiSummary}
+        </p>
       </div>
 
       {/* Incidents + Deployments */}
-      <div style={S.grid2}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         {/* Open Incidents */}
         <div className="panel">
           <div className="panel-header">
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <AlertTriangle size={14} style={{ color: "#EF4444" }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Open Incidents</span>
+              <AlertTriangle size={13} style={{ color: "#F87171" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#EAECF0" }}>Open Incidents</span>
               {incidents.length > 0 && (
-                <span style={{ background: "rgba(239,68,68,0.15)", color: "#F87171", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 99, padding: "0 6px", fontSize: 10.5, fontWeight: 600 }}>
+                <span style={{
+                  background: "rgba(239,68,68,0.1)", color: "#F87171",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  borderRadius: 99, padding: "0 6px", fontSize: 10.5, fontWeight: 600,
+                }}>
                   {incidents.length}
                 </span>
               )}
             </div>
             <Link href="/incidents">
               <span style={{ fontSize: 11, color: "#3B82F6", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
-                View all <ArrowUpRight size={11} />
+                View all <ArrowUpRight size={10} />
               </span>
             </Link>
           </div>
+
           {incidents.length === 0 ? (
-            <div style={{ padding: "32px 20px", textAlign: "center" }}>
-              <CheckCircle size={22} style={{ color: "#10B981", margin: "0 auto 8px" }} />
-              <div style={{ fontSize: 12.5, color: "#10B981", fontWeight: 500 }}>All clear</div>
-              <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 3 }}>No open incidents</div>
+            <div style={{ padding: "36px 20px", textAlign: "center" }}>
+              <CheckCircle size={20} style={{ color: "#10B981", margin: "0 auto 8px", display: "block" }} />
+              <div style={{ fontSize: 13, color: "#34D399", fontWeight: 500 }}>All clear</div>
+              <div style={{ fontSize: 11, color: "#404C5C", marginTop: 3 }}>No open incidents</div>
             </div>
           ) : (
-            <div>
-              {incidents.slice(0, 6).map((inc: any) => (
-                <div key={inc.id} style={{
-                  display: "flex", alignItems: "flex-start", gap: 10,
-                  padding: "10px 16px", borderBottom: "1px solid #111318",
-                  transition: "background 0.1s", cursor: "pointer",
-                }}>
-                  <div style={{ paddingTop: 2 }}>
-                    <span className={`sev sev-${inc.severity}`}>{inc.severity}</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, color: "#C4CDD9", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{inc.title}</div>
-                    <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 2 }}>
-                      {inc.service_name ?? "Platform"} · {new Date(inc.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 600, color: "#FCD34D",
-                    background: "rgba(245,158,11,0.1)", borderRadius: 99, padding: "2px 7px",
-                    whiteSpace: "nowrap",
-                  }}>{inc.status}</span>
+            incidents.slice(0, 6).map((inc: any) => (
+              <div key={inc.id} className="timeline-row">
+                <div style={{ paddingTop: 1 }}>
+                  <span className={`sev sev-${inc.severity}`}>{inc.severity.slice(0, 3)}</span>
                 </div>
-              ))}
-            </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 12.5, color: "#C1CAD6", fontWeight: 500,
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    marginBottom: 2,
+                  }}>
+                    {inc.title}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#404C5C" }}>
+                    <Clock size={9} />
+                    {inc.service_name ?? "Platform"} · {timeSince(inc.created_at)}
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: 10.5, fontWeight: 500,
+                  color: INC_COLOR[inc.severity] ?? "#7A8899",
+                  opacity: 0.8,
+                  flexShrink: 0,
+                  alignSelf: "center",
+                }}>
+                  {inc.status}
+                </span>
+              </div>
+            ))
           )}
         </div>
 
@@ -177,89 +273,80 @@ export default function OverviewPage() {
         <div className="panel">
           <div className="panel-header">
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <Rocket size={14} style={{ color: "#8B5CF6" }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Recent Deployments</span>
+              <Rocket size={13} style={{ color: "#A78BFA" }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#EAECF0" }}>Recent Deployments</span>
             </div>
             <Link href="/deployments">
               <span style={{ fontSize: 11, color: "#3B82F6", cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
-                View all <ArrowUpRight size={11} />
+                View all <ArrowUpRight size={10} />
               </span>
             </Link>
           </div>
+
           {deployments.length === 0 ? (
-            <div style={{ padding: "32px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: 12, color: "#4E5A6B" }}>No deployments yet</div>
+            <div style={{ padding: "36px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#404C5C" }}>No deployments yet.</div>
               <Link href="/deployments">
-                <div style={{ fontSize: 11, color: "#3B82F6", marginTop: 6, cursor: "pointer" }}>Create first deployment →</div>
+                <div style={{ fontSize: 11, color: "#3B82F6", marginTop: 6, cursor: "pointer" }}>
+                  View deployments →
+                </div>
               </Link>
             </div>
           ) : (
-            <div>
-              {deployments.slice(0, 6).map((dep: any) => {
-                const ds = DEP_STATUS[dep.status] ?? { color: "#4E5A6B", dot: "#252D3A" };
-                return (
-                  <div key={dep.id} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "10px 16px", borderBottom: "1px solid #111318",
-                  }}>
-                    <span className="dot" style={{ background: ds.dot, boxShadow: `0 0 5px ${ds.dot}80`, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span className="mono" style={{ fontSize: 12, color: "#E8ECF4", fontWeight: 500 }}>{dep.version}</span>
-                        <span className={`env env-${dep.environment}`}>{dep.environment}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: "#4E5A6B", marginTop: 1 }}>
-                        {dep.service_name ?? "—"} · {dep.deployed_by ?? "—"}
-                      </div>
+            deployments.slice(0, 6).map((dep: any) => {
+              const dotColor = DEP_DOT[dep.status] ?? "#404C5C";
+              return (
+                <div key={dep.id} className="timeline-row">
+                  <span
+                    className="dot"
+                    style={{
+                      background: dotColor,
+                      boxShadow: `0 0 5px ${dotColor}60`,
+                      marginTop: 4,
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                      <span className="mono" style={{ fontSize: 12, color: "#EAECF0", fontWeight: 500 }}>
+                        {dep.version}
+                      </span>
+                      <span className={`env env-${dep.environment}`}>{dep.environment}</span>
                     </div>
-                    <span style={{ fontSize: 12, color: ds.color, fontWeight: 600, whiteSpace: "nowrap" }}>{dep.status}</span>
+                    <div style={{ fontSize: 11, color: "#404C5C" }}>
+                      {dep.service_name ?? "—"} · {dep.deployed_by ?? "—"}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                  <span style={{
+                    fontSize: 11.5, color: dotColor, fontWeight: 600,
+                    whiteSpace: "nowrap", flexShrink: 0,
+                  }}>
+                    {dep.status}
+                  </span>
+                </div>
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* Platform grid */}
-      <div className="panel" style={{ overflow: "hidden" }}>
-        <div className="panel-header" style={{ background: "rgba(59,130,246,0.04)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#3B82F6" }} />
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: "#E8ECF4" }}>Platform Capabilities — Phase 1</span>
+      {/* Platform capabilities grid */}
+      {!hasData && (
+        <div className="panel" style={{ padding: "20px", textAlign: "center" }}>
+          <TrendingUp size={20} style={{ color: "#404C5C", margin: "0 auto 10px", display: "block" }} />
+          <div style={{ fontSize: 13, color: "#7A8899", fontWeight: 500, marginBottom: 4 }}>No data yet</div>
+          <div style={{ fontSize: 12, color: "#404C5C", marginBottom: 14 }}>
+            Generate demo data to populate the dashboard with realistic telemetry.
           </div>
-          <span style={{ fontSize: 11, color: "#4E5A6B" }}>SyncOps AI · Observability Foundation</span>
+          <button
+            className="btn btn-sm btn-outline-blue"
+            onClick={() => genDemo.mutate()}
+            disabled={genDemo.isPending}
+          >
+            <Zap size={11} />
+            {genDemo.isPending ? "Generating…" : "Generate Demo Data"}
+          </button>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
-          {[
-            { title: "Service Catalog", desc: "Health, ownership, tier & metadata per service.", icon: Server, color: "#60A5FA", href: "/services" },
-            { title: "Structured Logs", desc: "Filterable log stream with trace correlation.", icon: ScrollText, color: "#4E5A6B", href: "/logs" },
-            { title: "Metrics", desc: "Latency, error rate & throughput area charts.", icon: BarChart3, color: "#F59E0B", href: "/metrics" },
-            { title: "Incidents", desc: "Severity lifecycle with RCA linkage.", icon: AlertTriangle, color: "#EF4444", href: "/incidents" },
-            { title: "Deployments", desc: "Version audit trail with rollback tracking.", icon: Rocket, color: "#8B5CF6", href: "/deployments" },
-            { title: "AI Copilot", desc: "Operational Q&A — Phase 4 RAG pipeline.", icon: Zap, color: "#3B82F6", href: "/copilot" },
-          ].map((p, i) => (
-            <Link key={p.title} href={p.href}>
-              <div style={{
-                padding: "14px 18px",
-                borderRight: i % 3 !== 2 ? "1px solid #111318" : "none",
-                borderBottom: i < 3 ? "1px solid #111318" : "none",
-                transition: "background 0.12s",
-                cursor: "pointer",
-              }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#0F1116"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
-                  <p.icon size={13} style={{ color: p.color }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: "#C4CDD9" }}>{p.title}</span>
-                </div>
-                <p style={{ fontSize: 11.5, color: "#4E5A6B", lineHeight: 1.5 }}>{p.desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
