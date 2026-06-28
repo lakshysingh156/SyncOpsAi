@@ -4,6 +4,11 @@
 
 <br/><br/>
 
+<h1>⚡ SyncOps AI</h1>
+
+<p><strong>AI-native observability & operational intelligence platform for engineering teams.</strong><br/>
+Monitor services, investigate incidents, analyze logs, and resolve issues — faster.</p>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
@@ -33,24 +38,31 @@ Modern engineering teams run dozens of microservices across multiple environment
 ## Features
 
 ### 🗂 Service Catalog
+
 Centralized registry for all your microservices. Track language, tier, owner team, and health status. One-click demo seeding with realistic microservice topologies.
 
 ### 📋 Log Management
+
 Structured log aggregation with full-text search, severity filters, trace ID correlation, and expandable metadata inspection. Built for high-volume, production-grade log streams.
 
 ### 📈 Metrics & Analytics
+
 Time-series visualization for P99 latency, error rate, and throughput per service. Area charts powered by Recharts with configurable service filters and live demo data generation.
 
 ### 🚨 Incident Management
+
 Full incident lifecycle — declare, triage, investigate, resolve. Severity-color-coded table, status transitions (`open → investigating → resolved`), and structured timelines.
 
 ### 🚀 Deployment Tracking
+
 Immutable deployment audit trail. Track version, environment, deployer, duration, and success rate across every service release.
 
 ### 🤖 AI Copilot
-Context-aware operational assistant. Ask questions like *"Why is payment-service spiking?"* or *"Summarize all P1 incidents this week"*. Grounded in your live observability data (RAG pipeline — Phase 4).
+
+Context-aware operational assistant. Ask questions like _"Why is payment-service spiking?"_ or _"Summarize all P1 incidents this week"_. Grounded in your live observability data (RAG pipeline — Phase 4).
 
 ### 📊 Observability Dashboard
+
 Single-pane summary: live service count, open incidents, deployment velocity, system-wide error rate, P99 latency, and log volume — all in one view.
 
 ---
@@ -82,18 +94,18 @@ graph TD
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19, Vite 7, Tailwind CSS v4, Wouter, TanStack Query v5 |
-| **UI Components** | Recharts, Lucide React, Framer Motion |
-| **Backend** | Express 5, Node.js 24, TypeScript 5.9 |
-| **Logging** | Pino + pino-http (structured JSON logs) |
-| **Database** | PostgreSQL 16, Drizzle ORM, drizzle-zod |
-| **Validation** | Zod v4 (shared across API + frontend) |
-| **API Codegen** | Orval (OpenAPI → React Query hooks) |
-| **Build** | esbuild (API), Vite (frontend) |
-| **Monorepo** | pnpm workspaces, TypeScript project references |
-| **Runtime** | Node.js 24, ESM throughout |
+| Layer             | Technology                                                   |
+| ----------------- | ------------------------------------------------------------ |
+| **Frontend**      | React 19, Vite 7, Tailwind CSS v4, Wouter, TanStack Query v5 |
+| **UI Components** | Recharts, Lucide React, Framer Motion                        |
+| **Backend**       | Express 5, Node.js 24, TypeScript 5.9                        |
+| **Logging**       | Pino + pino-http (structured JSON logs)                      |
+| **Database**      | PostgreSQL 16, Drizzle ORM, drizzle-zod                      |
+| **Validation**    | Zod v4 (shared across API + frontend)                        |
+| **API Codegen**   | Orval (OpenAPI → React Query hooks)                          |
+| **Build**         | esbuild (API), Vite (frontend)                               |
+| **Monorepo**      | pnpm workspaces, TypeScript project references               |
+| **Runtime**       | Node.js 24, ESM throughout                                   |
 
 ---
 
@@ -102,19 +114,50 @@ graph TD
 > **To make this repo look most impressive, take screenshots in this exact order and state:**
 
 ### 1. Overview Dashboard
+
+<<<<<<< HEAD
 **Page:** `/` — seed demo data first, then capture all stat tiles + recent incidents (P1 in red) + recent deployments.
 
 ![Dashboard Overview](https://placehold.co/1280x720/07090C/3B82F6?text=Dashboard+Screenshot+Coming+Soon)
 
 ### 2. Metrics & Analytics
+
 **Page:** `/metrics` — capture all 3 area charts (Latency, Error Rate, Throughput) fully rendered with service filter visible.
 
 ![Metrics Analytics](https://placehold.co/1280x720/07090C/3B82F6?text=Metrics+Screenshot+Coming+Soon)
 
 ### 3. AI Copilot
-**Page:** `/copilot` — show a live conversation: *"Summarize open incidents and identify the highest risk service"* with the AI response visible.
 
-![AI Copilot](https://placehold.co/1280x720/07090C/3B82F6?text=AI+Copilot+Screenshot+Coming+Soon)
+**Page:** `/copilot` — show a live conversation: _"Summarize open incidents and identify the highest risk service"_ with the AI response visible.
+
+# ![AI Copilot](https://placehold.co/1280x720/07090C/3B82F6?text=AI+Copilot+Screenshot+Coming+Soon)
+
+**Page:** `/` (Overview)
+**State:** All stat tiles showing data — 8 services, 2+ open incidents, 5+ deployments. Recent incidents panel showing P1 severity in red. Recent deployments showing version tags.
+
+<!-- Add screenshot here -->
+
+![Dashboard Overview](docs/screenshots/dashboard.png)
+
+### 2. Metrics & Analytics
+
+**Page:** `/metrics`
+**State:** All three charts rendered (Latency, Error Rate, Throughput) with 30+ data points each. Service filter dropdown visible. Area charts showing realistic curve patterns.
+
+<!-- Add screenshot here -->
+
+![Metrics Analytics](docs/screenshots/metrics.png)
+
+### 3. AI Copilot
+
+**Page:** `/copilot`
+**State:** A conversation visible — ask _"Why is auth-service showing elevated error rates?"_ — show the AI response with formatted analysis. Suggested prompts visible in the sidebar.
+
+<!-- Add screenshot here -->
+
+![AI Copilot](docs/screenshots/copilot.png)
+
+> > > > > > > 79a2158 (Add a comprehensive README and default port for the API server)
 
 ---
 
@@ -122,11 +165,11 @@ graph TD
 
 ### Prerequisites
 
-| Tool | Version | Install |
-|---|---|---|
-| Node.js | 24+ | [nodejs.org](https://nodejs.org) |
-| pnpm | 9+ | `npm install -g pnpm` |
-| PostgreSQL | 16+ | [postgresql.org](https://postgresql.org) or Docker |
+| Tool       | Version | Install                                            |
+| ---------- | ------- | -------------------------------------------------- |
+| Node.js    | 24+     | [nodejs.org](https://nodejs.org)                   |
+| pnpm       | 9+      | `npm install -g pnpm`                              |
+| PostgreSQL | 16+     | [postgresql.org](https://postgresql.org) or Docker |
 
 ### 1. Clone
 
@@ -152,6 +195,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/syncops
 ### 4. Database setup
 
 **Option A — Docker (recommended):**
+
 ```bash
 docker run -d --name syncops-pg \
   -e POSTGRES_PASSWORD=password \
@@ -161,11 +205,13 @@ docker exec -it syncops-pg psql -U postgres -c "CREATE DATABASE syncops;"
 ```
 
 **Option B — Local PostgreSQL:**
+
 ```bash
 psql -U postgres -c "CREATE DATABASE syncops;"
 ```
 
 Then push the schema:
+
 ```bash
 pnpm --filter @workspace/db run push
 ```
@@ -229,6 +275,7 @@ SyncOpsAi/
 ## Roadmap
 
 ### ✅ Phase 1 — Foundation (Complete)
+
 - [x] Service Catalog (full CRUD)
 - [x] Structured Log Aggregation
 - [x] Metrics Time-Series (latency, error rate, throughput)
@@ -238,18 +285,21 @@ SyncOpsAi/
 - [x] Overview Dashboard
 
 ### 🔄 Phase 2 — Tracing & Alerting
+
 - [ ] Distributed Trace Explorer (Jaeger-compatible)
 - [ ] Alerting Engine with threshold rules
 - [ ] Slack / PagerDuty webhook integration
 - [ ] Anomaly detection on metric streams
 
 ### 🔜 Phase 3 — Intelligence Layer
+
 - [ ] AI Root Cause Analysis (RAG pipeline on logs + traces)
 - [ ] SLO/SLA Management with error budgets
 - [ ] Service Dependency Graph
 - [ ] Automated runbook suggestions
 
 ### 🔮 Phase 4 — Scale
+
 - [ ] Multi-tenancy + RBAC
 - [ ] Real-time WebSocket streaming
 - [ ] Kubernetes operator for auto-discovery
@@ -261,15 +311,15 @@ SyncOpsAi/
 
 SyncOps AI demonstrates end-to-end production engineering skills across the full observability stack:
 
-| Domain | Demonstrated Skills |
-|---|---|
-| **Backend Engineering** | REST API design, Express 5 middleware, structured logging (Pino), Zod validation, esbuild compilation |
-| **Platform Engineering** | pnpm monorepo with TypeScript project references, OpenAPI-driven codegen (Orval), shared lib architecture |
-| **Database Engineering** | Drizzle ORM schema design, type-safe queries, PostgreSQL migrations, multi-table aggregation |
-| **Frontend Engineering** | React 19, TanStack Query for server state, Recharts time-series, Tailwind v4 design system |
-| **Observability Systems** | Metrics pipelines, log aggregation, incident lifecycle, deployment tracking — the full ops loop |
-| **AI Engineering** | Copilot interface with RAG-ready architecture, context-aware response generation |
-| **API Design** | OpenAPI-first contract, versioned routes, auto-generated typed hooks, consistent error responses |
+| Domain                    | Demonstrated Skills                                                                                       |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Backend Engineering**   | REST API design, Express 5 middleware, structured logging (Pino), Zod validation, esbuild compilation     |
+| **Platform Engineering**  | pnpm monorepo with TypeScript project references, OpenAPI-driven codegen (Orval), shared lib architecture |
+| **Database Engineering**  | Drizzle ORM schema design, type-safe queries, PostgreSQL migrations, multi-table aggregation              |
+| **Frontend Engineering**  | React 19, TanStack Query for server state, Recharts time-series, Tailwind v4 design system                |
+| **Observability Systems** | Metrics pipelines, log aggregation, incident lifecycle, deployment tracking — the full ops loop           |
+| **AI Engineering**        | Copilot interface with RAG-ready architecture, context-aware response generation                          |
+| **API Design**            | OpenAPI-first contract, versioned routes, auto-generated typed hooks, consistent error responses          |
 
 ---
 
