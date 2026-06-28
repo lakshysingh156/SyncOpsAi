@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "yhykqSRmSMdwt5xKE3Z6F"
+uri = "file://docs/screenshots/banner.png"
+type = "image"
+title = "syncops ai github banner"
